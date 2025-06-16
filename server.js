@@ -28,26 +28,42 @@ app.get('/login',
   (req, res) => res.redirect('/')
 );
 
-// 🔁 SAML Callback Route
+// ✅ Robust SAML Callback Route with full logging
 app.post('/login/callback',
   passport.authenticate('saml', {
     failureRedirect: '/login/fail'
   }),
   (req, res) => {
-    const email = req.user?.nameID;
-    console.log('✅ SAML Response:', req.user); // Log SAML profile
+    try {
+      const profile = req.user;
+      console.log('✅ SAML Profile:', profile); // Full SAML assertion
 
-    if (!email) return res.send('SAML login succeeded but no email returned.');
+      const email = profile?.nameID || profile?.email || profile?.userPrincipalName;
 
-    const query = 'SELECT * FROM users WHERE email = ?';
-    db.query(query, [email], (err, results) => {
-      if (err) return res.status(500).send('❌ Database error');
-      if (results.length > 0) {
-        res.sendFile(path.join(__dirname, 'views', 'success.html'));
-      } else {
-        res.sendFile(path.join(__dirname, 'views', 'error.html'));
+      if (!email) {
+        console.error('❌ No email found in SAML response:', profile);
+        return res.status(400).send('SAML login succeeded, but no email returned.');
       }
-    });
+
+      const query = 'SELECT * FROM users WHERE email = ?';
+      db.query(query, [email], (err, results) => {
+        if (err) {
+          console.error('❌ DB Error:', err);
+          return res.status(500).send('❌ Database error');
+        }
+
+        if (results.length > 0) {
+          console.log('✅ User found:', results[0]);
+          res.sendFile(path.join(__dirname, 'views', 'success.html'));
+        } else {
+          console.warn('⚠️ User not found in DB:', email);
+          res.sendFile(path.join(__dirname, 'views', 'error.html'));
+        }
+      });
+    } catch (err) {
+      console.error('❌ Unhandled Callback Error:', err);
+      res.status(500).send('❌ Internal server error during SAML callback');
+    }
   }
 );
 
@@ -56,7 +72,7 @@ app.get('/login/fail', (req, res) => {
   res.send('❌ SAML Login Failed. Please try again.');
 });
 
-// Optional Debug Login
+// 🔍 Optional direct check (manual test)
 app.get('/abc-login', (req, res) => {
   const email = req.query.email;
   if (!email) return res.send('Missing email');
