@@ -14,4 +14,8 @@ passport.use(new SamlStrategy(
   (profile, done) => done(null, profile)
 ));
 
+<<<<<<< HEAD
 module.exports = passport;
+=======
+module.exports = passport;
+>>>>>>> d1de502 (Step 4: Added SAML login routes and auth logic)
