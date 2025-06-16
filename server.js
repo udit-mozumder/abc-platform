@@ -6,7 +6,7 @@ const passport = require('./samlStrategy');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT; // ✅ NO fallback
+const PORT = process.env.PORT;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('views'));
@@ -16,14 +16,7 @@ app.use(session({
   resave: false,
   saveUninitialized: true
 }));
-app.use(passport.initialize());
-app.use(passport.session());
 
-app.use(session({
-  secret: 'saml-secret',
-  resave: false,
-  saveUninitialized: true
-}));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -42,6 +35,7 @@ app.post('/login/callback',
   }),
   (req, res) => {
     const email = req.user?.nameID;
+    console.log('✅ SAML Response:', req.user); // Log SAML profile
 
     if (!email) return res.send('SAML login succeeded but no email returned.');
 
@@ -62,6 +56,7 @@ app.get('/login/fail', (req, res) => {
   res.send('❌ SAML Login Failed. Please try again.');
 });
 
+// Optional Debug Login
 app.get('/abc-login', (req, res) => {
   const email = req.query.email;
   if (!email) return res.send('Missing email');
