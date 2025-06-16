@@ -22,6 +22,12 @@ const samlStrategy = new SamlStrategy(
     return done(null, profile);
   }
 );
+console.log("SAML Strategy Config:", {
+  entryPoint: process.env.SAML_ENTRY_POINT,
+  issuer: process.env.SAML_ISSUER,
+  callbackUrl: process.env.SAML_CALLBACK_URL,
+  cert: process.env.SAML_CERT?.substring(0, 30) + '...' // just for preview
+});
 
 passport.use(samlStrategy);
 module.exports = passport;
